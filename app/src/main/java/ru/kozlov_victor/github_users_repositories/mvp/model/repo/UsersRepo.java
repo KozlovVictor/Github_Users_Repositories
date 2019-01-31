@@ -14,7 +14,7 @@ public class UsersRepo {
         return ApiHolder.getApi().getUser(username).subscribeOn(Schedulers.io());
     }
 
-    public Single<List<Repository>> getUserRepository(String username) {
-        return ApiHolder.getApi().getUserRepository(username).subscribeOn(Schedulers.io());
+    public Single<List<Repository>> getUserRepository(User user) {
+        return ApiHolder.getApi().getUserRepository(user.getReposUrl()).subscribeOn(Schedulers.io());
     }
 }

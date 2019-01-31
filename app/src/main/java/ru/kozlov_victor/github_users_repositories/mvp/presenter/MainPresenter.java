@@ -5,12 +5,10 @@ import android.annotation.SuppressLint;
 import com.arellomobile.mvp.InjectViewState;
 import com.arellomobile.mvp.MvpPresenter;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import io.reactivex.Scheduler;
 import io.reactivex.subjects.PublishSubject;
 import ru.kozlov_victor.github_users_repositories.mvp.model.entity.Repository;
+import ru.kozlov_victor.github_users_repositories.mvp.model.entity.User;
 import ru.kozlov_victor.github_users_repositories.mvp.model.repo.UsersRepo;
 import ru.kozlov_victor.github_users_repositories.mvp.presenter.list.IUsersRepositoryListPresenter;
 import ru.kozlov_victor.github_users_repositories.mvp.view.MainView;
@@ -26,6 +24,7 @@ public class MainPresenter extends MvpPresenter<MainView> {
 
     private Scheduler mainThreadScheduler;
     private UsersRepo usersRepo;
+    private User targetUser;
 
     public MainPresenter(Scheduler mainThreadScheduler) {
         this.mainThreadScheduler = mainThreadScheduler;
@@ -42,38 +41,30 @@ public class MainPresenter extends MvpPresenter<MainView> {
     protected void onFirstViewAttach() {
         super.onFirstViewAttach();
         getViewState().init();
-        loadUser();
-        loadRepository();
-//        repositoryListPresenter.clickSubject.subscribe((IUsersRepositoryItemView item) - > {
-//            getViewState().showMessage();
-//        });
+        loadData();
     }
 
     @SuppressLint("CheckResult")
-    private void loadUser() {
+    private void loadData() {
         usersRepo.getUser(USERNAME)
                 .observeOn(mainThreadScheduler)
                 .subscribe(user -> {
+                            this.targetUser = user;
                             getViewState().setUsernameText(user.getLogin());
                             getViewState().setUserImageUrl(user.getAvatarUrl());
+                            usersRepo.getUserRepository(targetUser)
+                                    .observeOn(mainThreadScheduler)
+                                    .subscribe(repositories -> {
+                                        targetUser.setRepositories(repositories);
+                                        getViewState().updateRepositoryList();
+                                    }, Timber::e);
                         },
                         Timber::e);
-    }
-
-    @SuppressLint("CheckResult")
-    private void loadRepository() {
-        usersRepo.getUserRepository(USERNAME)
-                .subscribeOn(mainThreadScheduler)
-                .subscribe(repositoryList -> {
-                    repositoryListPresenter.userRepositoryList = repositoryList;
-                    getViewState().updateRepositoryList();
-        });
     }
 
     public class UserRepositoryListPresenter implements IUsersRepositoryListPresenter {
 
         PublishSubject<IUsersRepositoryItemView> clickSubject = PublishSubject.create();
-        List<Repository> userRepositoryList = new ArrayList<>();
 
         @Override
         public PublishSubject<IUsersRepositoryItemView> getClickSubject() {
@@ -82,13 +73,13 @@ public class MainPresenter extends MvpPresenter<MainView> {
 
         @Override
         public void bindView(IUsersRepositoryItemView view) {
-            Repository repository = userRepositoryList.get(view.getPos());
+            Repository repository = targetUser.getRepositories().get(view.getPos());
             view.setTitle(repository.getName());
         }
 
         @Override
         public int getUsersRepositoryCount() {
-            return userRepositoryList.size();
+            return targetUser == null || targetUser.getRepositories() == null ? 0 : targetUser.getRepositories().size();
         }
     }
 }

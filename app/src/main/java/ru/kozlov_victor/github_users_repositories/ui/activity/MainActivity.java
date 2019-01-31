@@ -6,7 +6,6 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.arellomobile.mvp.MvpAppCompatActivity;
 import com.arellomobile.mvp.presenter.InjectPresenter;
@@ -58,11 +57,6 @@ public class MainActivity extends MvpAppCompatActivity implements MainView {
         recyclerView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL));
         adapter = new UserRepositoryAdapter(mainPresenter.getRepositoryListPresenter());
         recyclerView.setAdapter(adapter);
-    }
-
-    @Override
-    public void showMessage(String text) {
-        Toast.makeText(this, text, Toast.LENGTH_LONG).show();
     }
 
     @Override
